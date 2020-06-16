@@ -24,3 +24,6 @@ npm run build
 ##### Run
 
 The Game can be accessed by opening the index.html file on any browser
+
+### Demo
+[Here](https://amitsaha83.github.io/ludo/) is a demo.
