@@ -1,0 +1,390 @@
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.game-container {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.board-container {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: 40% 20% 40%;
+  grid-template-rows: 40% 20% 40%;
+  width: 96vmin;
+  height: 96vmin;
+  position: relative;
+  box-sizing: border-box;
+  border: solid 1px #000000;
+  background-color: #f8f9fa;
+}
+
+.jail-green {
+  grid-row: 1;
+  grid-column: 3;
+}
+.jail-red {
+  grid-row: 1;
+  grid-column: 1;
+}
+.jail-blue {
+  grid-row: 3;
+  grid-column: 3;
+}
+.jail-yellow {
+  grid-row: 3;
+  grid-column: 1;
+}
+.playground-green {
+  grid-row: 1;
+  grid-column: 2;
+}
+.playground-red {
+  grid-row: 2;
+  grid-column: 1;
+}
+.playground-blue {
+  grid-row: 2;
+  grid-column: 3;
+}
+.playground-yellow {
+  grid-row: 3;
+  grid-column: 2;
+}
+
+.home {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  box-sizing: border-box;
+  border: 1px solid #000000;
+}
+
+.home.start-btn-container {
+  position: relative;
+}
+
+.home-cell.cell-green {
+  grid-column: 2;
+  grid-row: 1;
+}
+.home-cell.cell-red {
+  grid-column: 1;
+  grid-row: 2;
+}
+.home-cell.cell-blue {
+  grid-column: 3;
+  grid-row: 2;
+}
+.home-cell.cell-yellow {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.home-cell.cell-red-green {
+  background: linear-gradient(
+    to bottom left,
+    #17a11a 0%,
+    #17a11a 49%,
+    #000000 49%,
+    #000000 51%,
+    #f01619 51%,
+    #f01619 100%
+  );
+}
+.home-cell.cell-green-blue {
+  background: linear-gradient(
+    to bottom right,
+    #17a11a 0%,
+    #17a11a 49%,
+    #000000 49%,
+    #000000 51%,
+    #188ff5 51%,
+    #188ff5 100%
+  );
+}
+.home-cell.cell-blue-yellow {
+  background: linear-gradient(
+    to bottom left,
+    #188ff5 0%,
+    #188ff5 49%,
+    #000000 49%,
+    #000000 51%,
+    #fdc32d 51%,
+    #fdc32d 100%
+  );
+}
+.home-cell.cell-yellow-red {
+  background: linear-gradient(
+    to bottom right,
+    #f01619 0%,
+    #f01619 49%,
+    #000000 49%,
+    #000000 51%,
+    #fdc32d 51%,
+    #fdc32d 100%
+  );
+}
+.home-cell.cell-center {
+  background: linear-gradient(
+      45deg,
+      #f01619 0%,
+      #f01619 48%,
+      #000000 48%,
+      #000000 52%,
+      #17a11a 52%,
+      #17a11a 100%
+    ),
+    linear-gradient(
+      135deg,
+      #f01619 0%,
+      #f01619 48%,
+      #000000 48%,
+      #000000 52%,
+      #fdc32d 52%,
+      #fdc32d 100%
+    ),
+    linear-gradient(
+      135deg,
+      #17a11a 0%,
+      #17a11a 48%,
+      #000000 48%,
+      #000000 52%,
+      #188ff5 52%,
+      #188ff5 100%
+    ),
+    linear-gradient(
+      45deg,
+      #fdc32d 0%,
+      #fdc32d 48%,
+      #000000 48%,
+      #000000 52%,
+      #188ff5 52%,
+      #188ff5 100%
+    );
+  background-size: 50% 50%;
+  background-position: 0% 0%, 0% 100%, 100% 0%, 100% 100%;
+  background-repeat: no-repeat;
+}
+
+.jail {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  box-sizing: border-box;
+  border: solid 1px #000000;
+}
+
+.jail-cell {
+  box-sizing: border-box;
+  border: solid 1px #000000;
+  background-color: #f8f9fa;
+}
+
+.playground {
+  display: grid;
+  justify-content: stretch;
+  align-content: stretch;
+}
+
+.playground.rows-6.cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+}
+
+.playground.rows-3.cols-6 {
+  grid-template-columns: repeat(6, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+.play-cell {
+  box-sizing: border-box;
+  border: solid 1px #000000;
+}
+
+.cell-green {
+  background-color: #17a11a;
+}
+.cell-red {
+  background-color: #f01619;
+}
+.cell-blue {
+  background-color: #188ff5;
+}
+.cell-yellow {
+  background-color: #fdc32d;
+}
+
+.occupied {
+  position: relative;
+}
+.coin {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: solid 1px #e8eef6;
+  box-shadow: 0 0 3px 1px #030303;
+  width: calc(95% - 3px);
+  height: calc(95% - 3px);
+  top: 4%;
+}
+.coin.active {
+  cursor: pointer;
+}
+.coin-green {
+  background-color: #17a11a;
+}
+.coin-red {
+  background-color: #f01619;
+}
+.coin-blue {
+  background-color: #188ff5;
+}
+.coin-yellow {
+  background-color: #fdc32d;
+}
+.coin-0 {
+  left: 4%;
+}
+.coin-1 {
+  left: 10%;
+}
+.coin-2 {
+  left: 16%;
+}
+.coin-3 {
+  left: 22%;
+}
+.coin-4 {
+  left: 28%;
+}
+.coin-5 {
+  left: 34%;
+}
+.coin-6 {
+  left: 40%;
+}
+.coin-7 {
+  left: 46%;
+}
+.coin-8 {
+  left: 52%;
+}
+
+.icon-cell {
+  font-size: 4vmin;
+  color: #646464;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.top-menu {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  height: 2vmin;
+  width: calc(4vmin + 1px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.top-menu .icon {
+  width: 2vmin;
+  height: 100%;
+  cursor: pointer;
+  color: #1cafcb;
+  text-align: center;
+  background-color: #f8f9fa;
+}
+.top-menu .icon:hover {
+  color: #f8f9fa;
+  background-color: #646464;
+}
+.top-menu .icon.info {
+  font-size: 1.8vmin;
+  line-height: 2.5vmin;
+}
+.top-menu .icon.close {
+  font-size: 2.2vmin;
+  line-height: 2vmin;
+}
+
+.action-message {
+  font-family: Cambria, Helvetica, sans-serif;
+  font-weight: 400;
+  line-height: 1.2;
+  color: #c7cace;
+  text-transform: uppercase;
+}
+
+.action-button {
+  position: relative;
+  cursor: pointer;
+}
+
+.action-button:before {
+  content: "";
+  position: absolute;
+  top: 2vmin;
+  left: 1vmin;
+  height: 5vmin;
+  width: 6vmin;
+}
+
+.action-button.dice:after {
+  content: "\1F3B2";
+  position: absolute;
+  top: -1vmin;
+  left: 0;
+  font-size: 8vmin;
+  background-color: transparent;
+}
+
+.action-button.trophy:after {
+  content: "\1F3C6";
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 8vmin;
+  background-color: transparent;
+}
+
+.dice-face {
+  position: relative;
+}
+.dice-face:before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  text-align: center;
+  font-size: 10vmin;
+  color: #646464;
+  line-height: 0.8em;
+  text-shadow: 2px 2px 2px rgba(255, 255, 255, 0.4);
+}
+
+.dice-face.face-1:before {
+  content: "\2680";
+}
+.dice-face.face-2:before {
+  content: "\2681";
+}
+.dice-face.face-3:before {
+  content: "\2682";
+}
+.dice-face.face-4:before {
+  content: "\2683";
+}
+.dice-face.face-5:before {
+  content: "\2684";
+}
+.dice-face.face-6:before {
+  content: "\2685";
+}
