@@ -1,4 +1,5 @@
-const players = ["red", "green", "blue", "yellow"];
+const colors = ["red", "green", "yellow", "blue"];
+const dice_face = ["", "one", "two", "three", "four", "five", "six"];
 const safe_cells = [0, 8, 13, 21, 26, 34, 39, 47];
 
 const board_metadata = {
@@ -6,8 +7,11 @@ const board_metadata = {
     start: 0,
     turn: 50,
     finish: 104,
-    dice: 216,
-    jail: [210, 212, 220, 222],
+    jail: {
+      coin_cells: [210, 212, 220, 222],
+      dice_roll_cell: 216,
+      player_icon_cell: 224
+    },
     cells: [
       [49, 50, 51],
       [48, 151, 0],
@@ -21,8 +25,11 @@ const board_metadata = {
     start: 13,
     turn: 11,
     finish: 117,
-    dice: 229,
-    jail: [223, 225, 233, 235],
+    jail: {
+      coin_cells: [223, 225, 233, 235],
+      dice_roll_cell: 229,
+      player_icon_cell: 217
+    },
     cells: [
       [5, 6, 7, 8, 9, 10],
       [116, 115, 114, 113, 112, 11],
@@ -33,8 +40,11 @@ const board_metadata = {
     start: 26,
     turn: 24,
     finish: 130,
-    dice: 242,
-    jail: [236, 238, 246, 248],
+    jail: {
+      coin_cells: [236, 238, 246, 248],
+      dice_roll_cell: 242,
+      player_icon_cell: 234
+    },
     cells: [
       [30, 129, 18],
       [29, 128, 19],
@@ -48,8 +58,11 @@ const board_metadata = {
     start: 39,
     turn: 37,
     finish: 143,
-    dice: 255,
-    jail: [249, 251, 259, 261],
+    jail: {
+      coin_cells: [249, 251, 259, 261],
+      dice_roll_cell: 255,
+      player_icon_cell: 267
+    },
     cells: [
       [38, 39, 40, 41, 42, 43],
       [37, 138, 139, 140, 141, 142],
@@ -87,9 +100,12 @@ const board_init = {
 
 const game_init = {
   game_state: 0,
-  board_active: 0,
+  board_active: false,
+  players: [],
   active_player: -1,
-  dice_roll: -1
+  dice_roll: -1,
+  prev_player: undefined,
+  prev_roll: undefined
 };
 
 const getPositionMap = function(board) {

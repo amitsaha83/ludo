@@ -1,4 +1,315 @@
-var players = ["red", "green", "blue", "yellow"];
+var isBotsTurn = function isBotsTurn(game) {
+  return game.game_state === 2 && game.players[game.active_player].type === "BOT";
+};
+
+var botPlay = function botPlay(game, board) {
+  if (game.dice_roll === -1) {
+    botRollDice(game);
+  } else if (game.dice_roll > 0) {
+    botPlayCoin(game, board);
+  }
+};
+
+var botRollDice = function botRollDice(game) {
+  var player_color = game.players[game.active_player].color;
+
+  var dom_elem = document.querySelector(".board-container .board-item.jail.jail-" + player_color + " .cell-" + player_color + ".occupied");
+  botAction(dom_elem);
+};
+
+var botPlayCoin = function botPlayCoin(game, board) {
+  /*
+    Intelligent play logic
+     1. Arrange coins in order of distance from home_turn
+    2. If any coin next_pos has coin of opponent, make move
+    3. Dice outcome 6: Free jailed coins if any
+    4. If any coin pos - 5 has any opponent coins, make move
+    5. If any coin next_pos is safe_cells, make move
+    6. If any coin current pos is in home cells, make move
+    7. If opponent coin between pos and next_pos, skip and try next coin
+    8. If current pos is safe_cell, skip and try next coin
+    9. Make move
+    */
+
+  // Fetch all coins position map
+  var coin_position_map = getPositionMap(board);
+
+  // Current bot player's coins array
+  var player_color = game.players[game.active_player].color;
+  var jail_coins = [];
+  var home_run_coins = [];
+  var active_coins = [];
+
+  // Order positions of player coins
+  for (var coin in board[player_color]) {
+    var coin_meta = board[player_color][coin];
+    var coin_obj = Object.assign({}, coin_meta, { id: coin });
+
+    if (coin_meta.pos > 200) {
+      jail_coins.push(coin_obj);
+    } else if (coin_meta.pos >= 100) {
+      home_run_coins.push(coin_obj);
+    } else {
+      if (active_coins.length === 0) {
+        active_coins.push(coin_obj);
+      } else {
+        var coin_home_distance = (52 + board_metadata[player_color].turn - coin_meta.pos) % 52;
+
+        // Insert sorted by distance from home_turn
+        var i = 0;
+        while (i < active_coins.length) {
+          var itr_home_distance = (52 + board_metadata[player_color].turn - active_coins[i].pos) % 52;
+          if (coin_home_distance > itr_home_distance) {
+            i++;
+          } else {
+            break;
+          }
+        }
+        active_coins.splice(i, 0, coin_obj);
+      }
+    }
+  }
+
+  // If any coin next_pos has coin of opponent, make move to jail opponent
+  var _iteratorNormalCompletion = true;
+  var _didIteratorError = false;
+  var _iteratorError = undefined;
+
+  try {
+    for (var _iterator = active_coins[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var _coin = _step.value;
+
+      var next_pos = _coin.pos + game.dice_roll;
+
+      if (!safe_cells.includes(next_pos)) {
+        // Fetch existing_player in next_pos
+        var existing_player = coin_position_map[next_pos] ? coin_position_map[next_pos][0] : undefined;
+
+        // Handle next_pos has another coin of different player, make move
+        if (existing_player && existing_player.player != game.active_player) {
+          var click_pos = _coin.pos;
+          var _dom_elem3 = document.querySelector(".board-container .board-item.playground .cell-" + _coin.pos + ".play-cell.occupied");
+          botAction(_dom_elem3);
+          return;
+        }
+      }
+    }
+
+    // Dice outcome 6: Free jailed coins if any
+  } catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion && _iterator.return) {
+        _iterator.return();
+      }
+    } finally {
+      if (_didIteratorError) {
+        throw _iteratorError;
+      }
+    }
+  }
+
+  if (game.dice_roll === 6 && jail_coins.length > 0) {
+    var dom_elem = document.querySelector(".board-container .board-item.jail.jail-" + player_color + " .jail-cell.cell-" + jail_coins[0].pos + ".occupied");
+    botAction(dom_elem);
+    return;
+  }
+
+  // If any opponent coin exists in current coin position - 5, make move to flee
+  var _iteratorNormalCompletion2 = true;
+  var _didIteratorError2 = false;
+  var _iteratorError2 = undefined;
+
+  try {
+    for (var _iterator2 = active_coins[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+      var _coin2 = _step2.value;
+
+      // Interate over previous 5 cells
+      for (var danger_pos = _coin2.pos - 1; danger_pos > _coin2.pos - 5; danger_pos--) {
+        var _existing_player = coin_position_map[danger_pos] ? coin_position_map[danger_pos][0] : undefined;
+
+        if (_existing_player && _existing_player.player != game.active_player) {
+          var _dom_elem4 = document.querySelector(".board-container .board-item.playground .cell-" + _coin2.pos + ".play-cell.occupied");
+          botAction(_dom_elem4);
+          return;
+        }
+      }
+    }
+
+    // If any coin next_pos is safe_cells, make move
+  } catch (err) {
+    _didIteratorError2 = true;
+    _iteratorError2 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion2 && _iterator2.return) {
+        _iterator2.return();
+      }
+    } finally {
+      if (_didIteratorError2) {
+        throw _iteratorError2;
+      }
+    }
+  }
+
+  var _iteratorNormalCompletion3 = true;
+  var _didIteratorError3 = false;
+  var _iteratorError3 = undefined;
+
+  try {
+    for (var _iterator3 = active_coins[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+      var _coin3 = _step3.value;
+
+      var next_pos = _coin3.pos + game.dice_roll;
+      if (safe_cells.includes(next_pos)) {
+        var _dom_elem5 = document.querySelector(".board-container .board-item.playground .cell-" + _coin3.pos + ".play-cell.occupied");
+        botAction(_dom_elem5);
+        return;
+      }
+    }
+
+    // If any coin current pos is in home cells, make move
+  } catch (err) {
+    _didIteratorError3 = true;
+    _iteratorError3 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion3 && _iterator3.return) {
+        _iterator3.return();
+      }
+    } finally {
+      if (_didIteratorError3) {
+        throw _iteratorError3;
+      }
+    }
+  }
+
+  var _iteratorNormalCompletion4 = true;
+  var _didIteratorError4 = false;
+  var _iteratorError4 = undefined;
+
+  try {
+    for (var _iterator4 = home_run_coins[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+      var _coin4 = _step4.value;
+
+      // special handling for 151
+      var cpos = _coin4.pos === 151 ? _coin4.pos - 52 : _coin4.pos;
+      var next_pos = cpos + game.dice_roll;
+      if (next_pos <= board_metadata[player_color].finish) {
+        var _dom_elem6 = document.querySelector(".board-container .board-item.playground .cell-" + _coin4.pos + ".play-cell.occupied");
+        botAction(_dom_elem6);
+        return;
+      }
+    }
+  } catch (err) {
+    _didIteratorError4 = true;
+    _iteratorError4 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion4 && _iterator4.return) {
+        _iterator4.return();
+      }
+    } finally {
+      if (_didIteratorError4) {
+        throw _iteratorError4;
+      }
+    }
+  }
+
+  var coins_with_nearby_opponent = [];
+  var coins_in_safe_cell = [];
+  var _iteratorNormalCompletion5 = true;
+  var _didIteratorError5 = false;
+  var _iteratorError5 = undefined;
+
+  try {
+    for (var _iterator5 = active_coins[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+      var _coin5 = _step5.value;
+
+      var next_pos = _coin5.pos + game.dice_roll;
+      var skip_coin = false;
+
+      // Interate over next 5 cells to look for nearby opponent
+      // If opponent coin between pos and next_pos, skip and try next coin
+      for (var _danger_pos = _coin5.pos + 1; _danger_pos <= next_pos; _danger_pos++) {
+        var _existing_player2 = coin_position_map[_danger_pos] ? coin_position_map[_danger_pos][0] : undefined;
+
+        if (_existing_player2 && _existing_player2.player != game.active_player) {
+          coins_with_nearby_opponent.push(_coin5);
+          skip_coin = true;
+        }
+      }
+
+      // If coin is in safe_cell, skip and try next coin
+      if (!skip_coin && safe_cells.includes(_coin5.pos)) {
+        coins_in_safe_cell.push(_coin5);
+        skip_coin = true;
+      }
+
+      if (!skip_coin) {
+        var _dom_elem7 = document.querySelector(".board-container .board-item.playground .cell-" + _coin5.pos + ".play-cell.occupied");
+        botAction(_dom_elem7);
+        return;
+      }
+    }
+
+    // All rules skipped, play first coin in safe cell
+  } catch (err) {
+    _didIteratorError5 = true;
+    _iteratorError5 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion5 && _iterator5.return) {
+        _iterator5.return();
+      }
+    } finally {
+      if (_didIteratorError5) {
+        throw _iteratorError5;
+      }
+    }
+  }
+
+  if (coins_in_safe_cell.length > 0) {
+    var _dom_elem = document.querySelector(".board-container .board-item.playground .cell-" + coins_in_safe_cell[0].pos + ".play-cell.occupied");
+    botAction(_dom_elem);
+    return;
+  }
+
+  // All rules skipped, play first coin with nearby opponent
+  if (coins_with_nearby_opponent.length > 0) {
+    var _dom_elem2 = document.querySelector(".board-container .board-item.playground .cell-" + coins_with_nearby_opponent[0].pos + ".play-cell.occupied");
+    botAction(_dom_elem2);
+    return;
+  }
+};
+
+var botAction = function botAction(dom_elem, player_color) {
+  var player_dom = void 0;
+  for (var i = 0; i < dom_elem.children.length; i++) {
+    if (dom_elem.children[i].classList.contains("active-player-icon")) {
+      player_dom = dom_elem.children[i];
+    }
+  }
+  if (player_dom) {
+    setTimeout(showBotIcon, 500, player_dom);
+    setTimeout(botClick, 1320, player_dom); // To match shake animation timing of .82s
+  }
+};
+
+var showBotIcon = function showBotIcon(player_dom) {
+  player_dom.classList.toggle("visible");
+  player_dom.classList.toggle("shake");
+};
+
+var botClick = function botClick(player_dom) {
+  player_dom.classList.toggle("visible");
+  player_dom.classList.toggle("shake");
+  player_dom.click();
+};
+var colors = ["red", "green", "yellow", "blue"];
+var dice_face = ["", "one", "two", "three", "four", "five", "six"];
 var safe_cells = [0, 8, 13, 21, 26, 34, 39, 47];
 
 var board_metadata = {
@@ -6,32 +317,44 @@ var board_metadata = {
     start: 0,
     turn: 50,
     finish: 104,
-    dice: 216,
-    jail: [210, 212, 220, 222],
+    jail: {
+      coin_cells: [210, 212, 220, 222],
+      dice_roll_cell: 216,
+      player_icon_cell: 224
+    },
     cells: [[49, 50, 51], [48, 151, 0], [47, 100, 1], [46, 101, 2], [45, 102, 3], [44, 103, 4]]
   },
   blue: {
     start: 13,
     turn: 11,
     finish: 117,
-    dice: 229,
-    jail: [223, 225, 233, 235],
+    jail: {
+      coin_cells: [223, 225, 233, 235],
+      dice_roll_cell: 229,
+      player_icon_cell: 217
+    },
     cells: [[5, 6, 7, 8, 9, 10], [116, 115, 114, 113, 112, 11], [17, 16, 15, 14, 13, 12]]
   },
   yellow: {
     start: 26,
     turn: 24,
     finish: 130,
-    dice: 242,
-    jail: [236, 238, 246, 248],
+    jail: {
+      coin_cells: [236, 238, 246, 248],
+      dice_roll_cell: 242,
+      player_icon_cell: 234
+    },
     cells: [[30, 129, 18], [29, 128, 19], [28, 127, 20], [27, 126, 21], [26, 125, 22], [25, 24, 23]]
   },
   red: {
     start: 39,
     turn: 37,
     finish: 143,
-    dice: 255,
-    jail: [249, 251, 259, 261],
+    jail: {
+      coin_cells: [249, 251, 259, 261],
+      dice_roll_cell: 255,
+      player_icon_cell: 267
+    },
     cells: [[38, 39, 40, 41, 42, 43], [37, 138, 139, 140, 141, 142], [36, 35, 34, 33, 32, 31]]
   }
 };
@@ -65,9 +388,12 @@ var board_init = {
 
 var game_init = {
   game_state: 0,
-  board_active: 0,
+  board_active: false,
+  players: [],
   active_player: -1,
-  dice_roll: -1
+  dice_roll: -1,
+  prev_player: undefined,
+  prev_roll: undefined
 };
 
 var getPositionMap = function getPositionMap(board) {
@@ -87,9 +413,6 @@ var getPositionMap = function getPositionMap(board) {
   return coin_position_map;
 };
 var _jsxFileName = "src/display-board.js";
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 function Home(props) {
   if (props.game.game_state === 0) {
     return React.createElement(
@@ -101,7 +424,7 @@ function Home(props) {
         __self: this
       },
       React.createElement("div", { className: "play-btn", onClick: function onClick() {
-          return props.startGame();
+          return props.initGame();
         }, __source: {
           fileName: _jsxFileName,
           lineNumber: 5
@@ -158,16 +481,16 @@ function Home(props) {
   var _iteratorError = undefined;
 
   try {
-    for (var _iterator = players[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-      var player = _step.value;
+    for (var _iterator = colors[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+      var color = _step.value;
 
       var classnames = [];
       classnames.push("home-cell");
-      classnames.push("cell-" + player);
+      classnames.push("cell-" + color);
 
       var coins = [];
       var coinClass = [];
-      if (props.actor_positions[board_metadata[player].finish]) {
+      if (props.actor_positions[board_metadata[color].finish]) {
         classnames.push("occupied");
 
         var coinvPos = 0;
@@ -176,14 +499,14 @@ function Home(props) {
         var _iteratorError2 = undefined;
 
         try {
-          for (var _iterator2 = props.actor_positions[board_metadata[player].finish][Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          for (var _iterator2 = props.actor_positions[board_metadata[color].finish][Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
             var coin = _step2.value;
 
             coinClass.push("coin");
-            coinClass.push("coin-" + player);
+            coinClass.push("coin-" + color);
             coinClass.push("coin-" + coinvPos);
             coins.push(React.createElement("div", {
-              key: "home-coin-" + player,
+              key: "home-coin-" + color + "-" + coinvPos,
               className: coinClass.join(" "),
               __source: {
                 fileName: _jsxFileName,
@@ -210,7 +533,7 @@ function Home(props) {
       }
       cells.push(React.createElement(
         "div",
-        { key: "home-cell-" + player, className: classnames.join(" "), __source: {
+        { key: "home-cell-" + color, className: classnames.join(" "), __source: {
             fileName: _jsxFileName,
             lineNumber: 62
           },
@@ -250,43 +573,73 @@ function Jail(props) {
   var _this = this;
 
   var cells = [];
+  var playable_colors = [];
+  var assigned_players_map = {};
+
+  // Populate from game metadata
+  var _iteratorNormalCompletion3 = true;
+  var _didIteratorError3 = false;
+  var _iteratorError3 = undefined;
+
+  try {
+    for (var _iterator3 = props.game.players[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+      var player = _step3.value;
+
+      playable_colors.push(player.color);
+      assigned_players_map[player.color] = player.type;
+    }
+  } catch (err) {
+    _didIteratorError3 = true;
+    _iteratorError3 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion3 && _iterator3.return) {
+        _iterator3.return();
+      }
+    } finally {
+      if (_didIteratorError3) {
+        throw _iteratorError3;
+      }
+    }
+  }
 
   var _loop = function _loop(i) {
     var classnames = [];
     var clickAction = "";
     var coins = [];
-    var coinClass = [];
+    var action_icon = [];
+    var player_icon = [];
     var cellId = board_metadata[props.color].finish + i + 100;
 
     // Jail cells
-    if (board_metadata[props.color].jail.includes(cellId)) {
+    if (board_metadata[props.color].jail.coin_cells.includes(cellId)) {
       classnames.push("jail-cell");
       classnames.push("cell-" + cellId);
 
       if (props.actor_positions[board_metadata[props.color].finish]) {
-        var _iteratorNormalCompletion3 = true;
-        var _didIteratorError3 = false;
-        var _iteratorError3 = undefined;
+        var _iteratorNormalCompletion4 = true;
+        var _didIteratorError4 = false;
+        var _iteratorError4 = undefined;
 
         try {
-          for (var _iterator3 = props.actor_positions[board_metadata[props.color].finish][Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-            var coin = _step3.value;
+          for (var _iterator4 = props.actor_positions[board_metadata[props.color].finish][Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+            var coin = _step4.value;
 
             if (board_init[props.color][coin.coin].jail_pos === cellId) {
-              classnames.push("icon-cell fa fa-home");
+              classnames.push("icon-cell far fa-home");
             }
           }
         } catch (err) {
-          _didIteratorError3 = true;
-          _iteratorError3 = err;
+          _didIteratorError4 = true;
+          _iteratorError4 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion3 && _iterator3.return) {
-              _iterator3.return();
+            if (!_iteratorNormalCompletion4 && _iterator4.return) {
+              _iterator4.return();
             }
           } finally {
-            if (_didIteratorError3) {
-              throw _iteratorError3;
+            if (_didIteratorError4) {
+              throw _iteratorError4;
             }
           }
         }
@@ -298,12 +651,14 @@ function Jail(props) {
 
       if (cell_actor && cell_actor.status !== 2) {
         classnames.push("occupied");
+
+        var coinClass = [];
         coinClass.push("coin");
         coinClass.push("coin-" + cell_actor.player);
         coinClass.push("coin-0");
 
         // Check if coin is active for play
-        if (props.game.board_active && cell_actor.status == 1) {
+        if (props.game.board_active && cell_actor.status === 1) {
           coinClass.push("glow");
           coinClass.push("active");
           clickAction = "playCoin";
@@ -311,36 +666,105 @@ function Jail(props) {
 
         coins.push(React.createElement("div", { key: "jail-coin-" + i, className: coinClass.join(" "), __source: {
             fileName: _jsxFileName,
-            lineNumber: 116
+            lineNumber: 127
           },
           __self: _this
         }));
+
+        if (assigned_players_map[cell_actor.player] === "BOT") {
+          player_icon.push(React.createElement("div", {
+            key: "jail-bot-player-" + i,
+            className: "active-player-icon player-icon-" + cell_actor.player + " icon-cell far fa-robot",
+            __source: {
+              fileName: _jsxFileName,
+              lineNumber: 132
+            },
+            __self: _this
+          }));
+        }
       }
     }
     // Center cell to show dice
-    else if (board_metadata[props.color].dice === cellId) {
+    else if (board_metadata[props.color].jail.dice_roll_cell === cellId) {
         classnames.push("cell-" + props.color);
-        if (players[props.game.active_player] == props.color) {
+        classnames.push("occupied");
+
+        var actionClass = [];
+        var content = "";
+        if (playable_colors[props.game.active_player] == props.color) {
           if (props.game.board_active) {
-            classnames.push("dice-face");
-            classnames.push("face-" + props.game.dice_roll);
-          } else if (props.game.game_state === 1) {
-            classnames.push("action-button dice");
-            classnames.push("spinner");
-            clickAction = "rollDice";
+            actionClass.push("dice-face");
+            actionClass.push("icon-cell");
+            actionClass.push("far fa-dice-" + dice_face[props.game.dice_roll]);
           } else if (props.game.game_state === 2) {
-            classnames.push("action-button trophy");
-            classnames.push("zoominout");
+            actionClass.push("action-button dice");
+            actionClass.push("spinner");
+            content = 127922;
+            clickAction = "rollDice";
+          } else if (props.game.game_state === 3) {
+            actionClass.push("action-button trophy");
+            actionClass.push("zoominout");
+            content = 127942;
             clickAction = "gaveOver";
           }
-        } else if (players[props.game.prev_player] == props.color) {
+
+          action_icon.push(React.createElement(
+            "div",
+            { key: "jail-action-" + i, className: actionClass.join(" "), __source: {
+                fileName: _jsxFileName,
+                lineNumber: 169
+              },
+              __self: _this
+            },
+            String.fromCodePoint(content)
+          ));
+
+          if (assigned_players_map[props.color] === "BOT") {
+            player_icon.push(React.createElement("div", {
+              key: "jail-bot-player-" + i,
+              className: "active-player-icon player-icon-" + props.color + " icon-cell far fa-robot",
+              __source: {
+                fileName: _jsxFileName,
+                lineNumber: 176
+              },
+              __self: _this
+            }));
+          }
+        } else if (playable_colors[props.game.prev_player] == props.color) {
           classnames.push("dice-face");
-          classnames.push("face-" + props.game.prev_roll);
+          classnames.push("icon-cell");
+          classnames.push("far fa-dice-" + dice_face[props.game.prev_roll]);
           classnames.push("fade-out");
         }
-      } else {
-        classnames.push("cell-" + props.color);
       }
+      // Corner cell to show player icon
+      else if (board_metadata[props.color].jail.player_icon_cell === cellId) {
+          classnames.push("cell-" + props.color);
+          classnames.push("icon-cell");
+
+          var assignedclass = [];
+          assignedclass.push("player-icon");
+          assignedclass.push("player-icon-" + props.color);
+          assignedclass.push("far");
+          if (assigned_players_map[props.color] === "HUMAN") {
+            assignedclass.push("fa-user");
+            if (props.game.game_state === 2 && playable_colors[props.game.active_player] == props.color) {
+              assignedclass.push("shake");
+            }
+          }
+          if (assigned_players_map[props.color] === "BOT") {
+            assignedclass.push("fa-robot");
+          }
+
+          player_icon.push(React.createElement("div", { ey: "jail-player-" + i, className: assignedclass.join(" "), __source: {
+              fileName: _jsxFileName,
+              lineNumber: 216
+            },
+            __self: _this
+          }));
+        } else {
+          classnames.push("cell-" + props.color);
+        }
 
     var clickFunc = undefined;
     if (clickAction === "playCoin") {
@@ -360,16 +784,18 @@ function Jail(props) {
     cells.push(React.createElement(
       "div",
       {
-        key: "jail-cell-" + i,
+        key: "jail-cell-" + props.color + "-" + i,
         className: classnames.join(" "),
         onClick: clickFunc,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 160
+          lineNumber: 237
         },
         __self: _this
       },
-      coins
+      coins,
+      action_icon,
+      player_icon
     ));
   };
 
@@ -381,11 +807,14 @@ function Jail(props) {
   classnames.push("board-item");
   classnames.push("jail");
   classnames.push("jail-" + props.color);
+  if (!assigned_players_map[props.color]) {
+    classnames.push("disabled");
+  }
   return React.createElement(
     "div",
     { className: classnames.join(" "), __source: {
         fileName: _jsxFileName,
-        lineNumber: 174
+        lineNumber: 256
       },
       __self: this
     },
@@ -399,10 +828,40 @@ function Playground(props) {
   var cells = [];
   var rows = props.cells.length;
   var cols = props.cells[0].length;
+  var playable_colors = [];
+  var assigned_players_map = {};
+
+  // Populate from game metadata
+  var _iteratorNormalCompletion5 = true;
+  var _didIteratorError5 = false;
+  var _iteratorError5 = undefined;
+
+  try {
+    for (var _iterator5 = props.game.players[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+      var player = _step5.value;
+
+      playable_colors.push(player.color);
+      assigned_players_map[player.color] = player.type;
+    }
+  } catch (err) {
+    _didIteratorError5 = true;
+    _iteratorError5 = err;
+  } finally {
+    try {
+      if (!_iteratorNormalCompletion5 && _iterator5.return) {
+        _iterator5.return();
+      }
+    } finally {
+      if (_didIteratorError5) {
+        throw _iteratorError5;
+      }
+    }
+  }
 
   for (var i = 0; i < rows; i++) {
     var _loop2 = function _loop2(j) {
       var coins = [];
+      var player_icon = [];
       var cellActor = undefined;
       var canClick = false;
       var cellId = props.cells[i][j];
@@ -419,7 +878,7 @@ function Playground(props) {
         classnames.push("cell-" + props.color);
       }
       if (safe_cells.includes(cellId)) {
-        classnames.push("icon-cell fa fa-life-ring");
+        classnames.push("icon-cell far fa-life-ring");
       }
 
       // Check for cell occupancy
@@ -428,7 +887,7 @@ function Playground(props) {
 
         // Determine cell actor
         cellActor = props.actor_positions[cellId].find(function (cell_actor) {
-          return cell_actor.player === players[props.game.active_player];
+          return cell_actor.player === playable_colors[props.game.active_player];
         });
         cellActor = cellActor || props.actor_positions[cellId][0];
 
@@ -436,16 +895,16 @@ function Playground(props) {
         var coinvPos = 0;
         var isCellActor = false;
         if (props.actor_positions[cellId].length > 1) {
-          var _iteratorNormalCompletion4 = true;
-          var _didIteratorError4 = false;
-          var _iteratorError4 = undefined;
+          var _iteratorNormalCompletion6 = true;
+          var _didIteratorError6 = false;
+          var _iteratorError6 = undefined;
 
           try {
-            for (var _iterator4 = props.actor_positions[cellId][Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-              var coin = _step4.value;
+            for (var _iterator6 = props.actor_positions[cellId][Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+              var coin = _step6.value;
 
               // Determine active coin
-              if (!isCellActor && coin.player === players[props.game.active_player]) {
+              if (!isCellActor && coin.player === playable_colors[props.game.active_player]) {
                 isCellActor = true;
               } else {
                 coins.push(React.createElement("div", {
@@ -453,7 +912,7 @@ function Playground(props) {
                   className: "coin coin-" + coin.player + " coin-" + coinvPos,
                   __source: {
                     fileName: _jsxFileName,
-                    lineNumber: 230
+                    lineNumber: 322
                   },
                   __self: _this2
                 }));
@@ -461,42 +920,54 @@ function Playground(props) {
               }
             }
           } catch (err) {
-            _didIteratorError4 = true;
-            _iteratorError4 = err;
+            _didIteratorError6 = true;
+            _iteratorError6 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion4 && _iterator4.return) {
-                _iterator4.return();
+              if (!_iteratorNormalCompletion6 && _iterator6.return) {
+                _iterator6.return();
               }
             } finally {
-              if (_didIteratorError4) {
-                throw _iteratorError4;
+              if (_didIteratorError6) {
+                throw _iteratorError6;
               }
             }
           }
         }
 
         // Add coin DOM for active coin
-        var _coinClass = [];
-        _coinClass.push("coin");
-        _coinClass.push("coin-" + cellActor.player);
-        _coinClass.push("coin-" + coinvPos);
+        var coinClass = [];
+        coinClass.push("coin");
+        coinClass.push("coin-" + cellActor.player);
+        coinClass.push("coin-" + coinvPos);
 
         if (props.game.board_active && cellActor.status === 1) {
-          _coinClass.push("glow");
-          _coinClass.push("active");
+          coinClass.push("glow");
+          coinClass.push("active");
           canClick = true;
         }
 
         coins.push(React.createElement("div", {
           key: "playground-coin-" + coinvPos,
-          className: _coinClass.join(" "),
+          className: coinClass.join(" "),
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 253
+            lineNumber: 345
           },
           __self: _this2
         }));
+
+        if (assigned_players_map[cellActor.player] === "BOT") {
+          player_icon.push(React.createElement("div", {
+            key: "playground-player",
+            className: "active-player-icon player-icon-" + cellActor.player + " icon-cell far fa-robot",
+            __source: {
+              fileName: _jsxFileName,
+              lineNumber: 353
+            },
+            __self: _this2
+          }));
+        }
       }
 
       cells.push(React.createElement(
@@ -509,11 +980,12 @@ function Playground(props) {
           } : undefined,
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 261
+            lineNumber: 366
           },
           __self: _this2
         },
-        coins
+        coins,
+        player_icon
       ));
     };
 
@@ -533,7 +1005,7 @@ function Playground(props) {
     "div",
     { className: classnames.join(" "), __source: {
         fileName: _jsxFileName,
-        lineNumber: 288
+        lineNumber: 394
       },
       __self: this
     },
@@ -549,16 +1021,16 @@ function Board(props) {
     key: "home",
     game: props.game,
     actor_positions: coin_position_map,
-    startGame: props.startGame,
+    initGame: props.initGame,
     __source: {
       fileName: _jsxFileName,
-      lineNumber: 296
+      lineNumber: 402
     },
     __self: this
   }));
 
-  for (var i = 0; i < players.length; i++) {
-    var color = players[i];
+  for (var i = 0; i < colors.length; i++) {
+    var color = colors[i];
     board.push(React.createElement(Jail, {
       key: "jail-" + i,
       color: color,
@@ -569,7 +1041,7 @@ function Board(props) {
       trophyClickHandler: props.resetGame,
       __source: {
         fileName: _jsxFileName,
-        lineNumber: 307
+        lineNumber: 413
       },
       __self: this
     }));
@@ -582,58 +1054,48 @@ function Board(props) {
       coinClickHandler: props.coinClickHandler,
       __source: {
         fileName: _jsxFileName,
-        lineNumber: 318
+        lineNumber: 424
       },
       __self: this
     }));
   }
 
-  if (props.game.game_state > 0) {
-    var _React$createElement;
-
+  if (props.game.game_state > 1) {
     // Show reset button
     board.push(React.createElement(
       "div",
       { key: "top-menu", className: "top-menu", __source: {
           fileName: _jsxFileName,
-          lineNumber: 332
+          lineNumber: 438
         },
         __self: this
       },
-      React.createElement(
-        "span",
-        {
-          title: "Game Wiki",
-          className: "icon info",
-          onClick: function onClick() {
-            return window.open("https://en.wikipedia.org/wiki/Ludo_(board_game)", "_blank");
-          },
-          __source: {
-            fileName: _jsxFileName,
-            lineNumber: 333
-          },
-          __self: this
+      React.createElement("span", {
+        title: "Game Wiki",
+        className: "icon far fa-question",
+        onClick: function onClick() {
+          return window.open("https://en.wikipedia.org/wiki/Ludo_(board_game)", "_blank");
         },
-        "\u24D8"
-      ),
-      React.createElement(
-        "span",
-        (_React$createElement = {
-          title: "Reset Game",
-          className: "icon close",
-          onClick: function onClick() {
-            return props.resetGame();
-          }
-        }, _defineProperty(_React$createElement, "onClick", function onClick() {
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 439
+        },
+        __self: this
+      }),
+      React.createElement("span", {
+        title: "Reset Game",
+        className: "icon fas fa-times",
+        onClick: function onClick() {
           if (window.confirm("Reset the game?")) {
             props.resetGame();
           }
-        }), _defineProperty(_React$createElement, "__source", {
+        },
+        __source: {
           fileName: _jsxFileName,
-          lineNumber: 345
-        }), _defineProperty(_React$createElement, "__self", this), _React$createElement),
-        "\xD7"
-      )
+          lineNumber: 449
+        },
+        __self: this
+      })
     ));
   }
 
@@ -641,16 +1103,283 @@ function Board(props) {
     "div",
     { className: "board-container", __source: {
         fileName: _jsxFileName,
-        lineNumber: 361
+        lineNumber: 462
       },
       __self: this
     },
     board
   );
 }
+
+function AssignmentBox(props) {
+  var _this3 = this;
+
+  if (props.game.game_state === 1) {
+    // Assigned players map
+    var assigned_players_map = {};
+    var _iteratorNormalCompletion7 = true;
+    var _didIteratorError7 = false;
+    var _iteratorError7 = undefined;
+
+    try {
+      for (var _iterator7 = props.game.players[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+        var player = _step7.value;
+
+        assigned_players_map[player.color] = player.type;
+      }
+    } catch (err) {
+      _didIteratorError7 = true;
+      _iteratorError7 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion7 && _iterator7.return) {
+          _iterator7.return();
+        }
+      } finally {
+        if (_didIteratorError7) {
+          throw _iteratorError7;
+        }
+      }
+    }
+
+    var drag_items = [];
+    drag_items.push(React.createElement("div", {
+      key: "drag-item-human",
+      className: "drag-item icon-cell fad fa-user-tie",
+      draggable: "true",
+      onDragStart: function onDragStart(event) {
+        event.target.classList.toggle("drag");
+        props.playerDragStartHandler(event, "HUMAN");
+      },
+      onDragEnd: function onDragEnd(event) {
+        event.target.classList.toggle("drag");
+      },
+      __source: {
+        fileName: _jsxFileName,
+        lineNumber: 475
+      },
+      __self: this
+    }));
+    if (props.game.players.length > 0) {
+      drag_items.push(React.createElement("div", { key: "drag-item-partition", className: "drag-item-partition", __source: {
+          fileName: _jsxFileName,
+          lineNumber: 490
+        },
+        __self: this
+      }));
+
+      drag_items.push(React.createElement("div", {
+        key: "drag-item-bot",
+        className: "drag-item icon-cell fad fa-robot",
+        draggable: "true",
+        onDragStart: function onDragStart(event) {
+          event.target.classList.add("drag");
+          props.playerDragStartHandler(event, "BOT");
+        },
+        onDragEnd: function onDragEnd(event) {
+          event.target.classList.remove("drag");
+        },
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 494
+        },
+        __self: this
+      }));
+    }
+
+    var drop_items = [];
+
+    var _loop3 = function _loop3(color) {
+      var assignedPlayer = [];
+
+      var dropclass = [];
+      dropclass.push("drop-item");
+      dropclass.push("cell-" + color);
+
+      if (assigned_players_map[color]) {
+        var assignedclass = [];
+        assignedclass.push("assigned-item");
+        assignedclass.push("player-icon-" + color);
+        assignedclass.push("far");
+        if (assigned_players_map[color] === "HUMAN") {
+          assignedclass.push("fa-user");
+        }
+        if (assigned_players_map[color] === "BOT") {
+          assignedclass.push("fa-robot");
+        }
+        assignedPlayer.push(React.createElement("div", { className: assignedclass.join(" "), __source: {
+            fileName: _jsxFileName,
+            lineNumber: 528
+          },
+          __self: _this3
+        }));
+        assignedPlayer.push(React.createElement("div", {
+          key: "drop-item-undo-" + color,
+          className: "undo icon-cell far fa-minus-circle",
+          onClick: function onClick() {
+            return props.playerUndoHandler(color);
+          },
+          __source: {
+            fileName: _jsxFileName,
+            lineNumber: 530
+          },
+          __self: _this3
+        }));
+
+        drop_items.push(React.createElement(
+          "div",
+          { key: "drop-item-" + color, className: dropclass.join(" "), __source: {
+              fileName: _jsxFileName,
+              lineNumber: 538
+            },
+            __self: _this3
+          },
+          assignedPlayer
+        ));
+      } else {
+        dropclass.push("droppable");
+
+        drop_items.push(React.createElement("div", {
+          key: "drop-item-" + color,
+          className: dropclass.join(" "),
+          onDragOver: function onDragOver(event) {
+            event.preventDefault();
+            event.target.classList.add("hover");
+          },
+          onDragLeave: function onDragLeave(event) {
+            event.target.classList.remove("hover");
+          },
+          onDrop: function onDrop(event) {
+            event.target.classList.remove("hover");
+            props.playerDropHandler(event, color);
+          },
+          __source: {
+            fileName: _jsxFileName,
+            lineNumber: 546
+          },
+          __self: _this3
+        }));
+      }
+    };
+
+    var _iteratorNormalCompletion8 = true;
+    var _didIteratorError8 = false;
+    var _iteratorError8 = undefined;
+
+    try {
+      for (var _iterator8 = colors[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+        var color = _step8.value;
+
+        _loop3(color);
+      }
+    } catch (err) {
+      _didIteratorError8 = true;
+      _iteratorError8 = err;
+    } finally {
+      try {
+        if (!_iteratorNormalCompletion8 && _iterator8.return) {
+          _iterator8.return();
+        }
+      } finally {
+        if (_didIteratorError8) {
+          throw _iteratorError8;
+        }
+      }
+    }
+
+    var contents = [];
+    // Show draggable section till all players not assigned
+    if (props.game.players.length < 4) {
+      contents.push(React.createElement(
+        "div",
+        { key: "dragzone", className: "dragzone", __source: {
+            fileName: _jsxFileName,
+            lineNumber: 569
+          },
+          __self: this
+        },
+        drag_items
+      ));
+      contents.push(React.createElement(
+        "div",
+        { key: "direction-zone", className: "direction-zone", __source: {
+            fileName: _jsxFileName,
+            lineNumber: 574
+          },
+          __self: this
+        },
+        React.createElement("i", { className: "icon-cell far fa-arrow-alt-down updown", __source: {
+            fileName: _jsxFileName,
+            lineNumber: 575
+          },
+          __self: this
+        })
+      ));
+    }
+    contents.push(React.createElement(
+      "div",
+      { key: "dropzone", className: "dropzone", __source: {
+          fileName: _jsxFileName,
+          lineNumber: 580
+        },
+        __self: this
+      },
+      drop_items
+    ));
+
+    // Show next button only after two players are assigned
+    if (props.game.players.length > 1) {
+      contents.push(React.createElement(
+        "div",
+        {
+          key: "next-zone",
+          className: "next-zone",
+          onClick: function onClick() {
+            return props.startClickHandler();
+          },
+          __source: {
+            fileName: _jsxFileName,
+            lineNumber: 588
+          },
+          __self: this
+        },
+        React.createElement("i", { className: "icon-cell fas fa-chevron-right", __source: {
+            fileName: _jsxFileName,
+            lineNumber: 593
+          },
+          __self: this
+        })
+      ));
+    }
+
+    return React.createElement(
+      "div",
+      { className: "assignment-box", __source: {
+          fileName: _jsxFileName,
+          lineNumber: 599
+        },
+        __self: this
+      },
+      React.createElement(
+        "div",
+        { className: "contents", __source: {
+            fileName: _jsxFileName,
+            lineNumber: 600
+          },
+          __self: this
+        },
+        contents
+      )
+    );
+  } else {
+    return "";
+  }
+}
 var _jsxFileName = "src/game.js";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -671,21 +1400,24 @@ var Game = function (_React$Component) {
       board: JSON.parse(JSON.stringify(board_init)) // Deep clone
     };
 
-    _this.startGame = _this.startGame.bind(_this);
+    _this.initGame = _this.initGame.bind(_this);
     _this.resetGame = _this.resetGame.bind(_this);
+    _this.startGame = _this.startGame.bind(_this);
     _this.rollDice = _this.rollDice.bind(_this);
     _this.play = _this.play.bind(_this);
+    _this.dragPlayer = _this.dragPlayer.bind(_this);
+    _this.assignPlayer = _this.assignPlayer.bind(_this);
+    _this.unAssignPlayer = _this.unAssignPlayer.bind(_this);
     return _this;
   }
 
   _createClass(Game, [{
-    key: "startGame",
-    value: function startGame() {
+    key: "initGame",
+    value: function initGame() {
       var game = Object.assign({}, this.state.game);
       this.setState({
         game: Object.assign({}, game, {
-          game_state: 1,
-          active_player: 0
+          game_state: 1
         })
       });
     }
@@ -698,9 +1430,54 @@ var Game = function (_React$Component) {
       });
     }
   }, {
+    key: "startGame",
+    value: function startGame() {
+      var game = this.state.game;
+      this.setState({
+        game: Object.assign({}, game, {
+          game_state: 2,
+          active_player: 0
+        })
+      });
+    }
+  }, {
+    key: "dragPlayer",
+    value: function dragPlayer(event, player) {
+      event.dataTransfer.setData("player", player);
+    }
+  }, {
+    key: "assignPlayer",
+    value: function assignPlayer(event, color) {
+      var game = this.state.game;
+      var players = [].concat(_toConsumableArray(game.players));
+
+      var player = event.dataTransfer.getData("player");
+      players.push({ color: color, type: player });
+
+      this.setState({
+        game: Object.assign({}, game, {
+          players: players
+        })
+      });
+    }
+  }, {
+    key: "unAssignPlayer",
+    value: function unAssignPlayer(color) {
+      var game = this.state.game;
+      var players = game.players.filter(function (p) {
+        return p.color !== color;
+      });
+
+      this.setState({
+        game: Object.assign({}, game, {
+          players: players
+        })
+      });
+    }
+  }, {
     key: "nextPlayer",
     value: function nextPlayer(player) {
-      return (player + 1) % players.length;
+      return (player + 1) % this.state.game.players.length;
     }
   }, {
     key: "nextPosition",
@@ -726,11 +1503,11 @@ var Game = function (_React$Component) {
   }, {
     key: "rollDice",
     value: function rollDice(player_idx) {
-      var board = Object.assign({}, this.state.board);
+      var board = JSON.parse(JSON.stringify(this.state.board));
       var game = Object.assign({}, this.state.game);
 
       var canPlay = false;
-      var player = players[player_idx];
+      var player = game.players[player_idx].color;
 
       // Dice Roll
       var dice_roll = Math.floor(Math.random() * 6 + 1);
@@ -775,7 +1552,7 @@ var Game = function (_React$Component) {
 
       if (canPlay) {
         game = Object.assign({}, game, {
-          board_active: 1,
+          board_active: true,
           active_player: player_idx,
           dice_roll: dice_roll,
           prev_player: undefined,
@@ -784,7 +1561,7 @@ var Game = function (_React$Component) {
       } else {
         var next_player_idx = this.nextPlayer(player_idx);
         game = Object.assign({}, game, {
-          board_active: 0,
+          board_active: false,
           active_player: next_player_idx,
           dice_roll: -1,
           prev_player: player_idx,
@@ -801,10 +1578,10 @@ var Game = function (_React$Component) {
     key: "play",
     value: function play(player_idx, coin, dice_roll) {
       var game = Object.assign({}, this.state.game);
-      var board = Object.assign({}, this.state.board);
+      var board = JSON.parse(JSON.stringify(this.state.board));
       var coin_position_map = getPositionMap(board);
 
-      var player = players[player_idx];
+      var player = game.players[player_idx].color;
       var player_next_pos = board[player][coin].next_pos;
 
       var playAgain = false;
@@ -853,8 +1630,8 @@ var Game = function (_React$Component) {
 
       if (gaveOver) {
         game = Object.assign({}, game, {
-          game_state: 2,
-          board_active: 0,
+          game_state: 3,
+          board_active: false,
           active_player: player_idx,
           dice_roll: -1
         });
@@ -862,7 +1639,7 @@ var Game = function (_React$Component) {
       // Player rolls again
       else if (playAgain || dice_roll == 6) {
           game = Object.assign({}, game, {
-            board_active: 0,
+            board_active: false,
             active_player: player_idx,
             dice_roll: -1
           });
@@ -871,7 +1648,7 @@ var Game = function (_React$Component) {
         else {
             var next_player_idx = this.nextPlayer(player_idx);
             game = Object.assign({}, game, {
-              board_active: 0,
+              board_active: false,
               active_player: next_player_idx,
               dice_roll: -1
             });
@@ -883,21 +1660,42 @@ var Game = function (_React$Component) {
       });
     }
   }, {
+    key: "componentDidUpdate",
+    value: function componentDidUpdate() {
+      // Set up bot play
+      if (isBotsTurn(this.state.game)) {
+        botPlay(this.state.game, this.state.board);
+      }
+    }
+  }, {
     key: "render",
     value: function render() {
       var game = [];
-
       game.push(React.createElement(Board, {
         key: "board",
         board: this.state.board,
         game: this.state.game,
-        startGame: this.startGame,
+        initGame: this.initGame,
         resetGame: this.resetGame,
         coinClickHandler: this.play,
         diceClickHandler: this.rollDice,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 231
+          lineNumber: 282
+        },
+        __self: this
+      }));
+
+      game.push(React.createElement(AssignmentBox, {
+        key: "assignmentbox",
+        game: this.state.game,
+        startClickHandler: this.startGame,
+        playerDragStartHandler: this.dragPlayer,
+        playerDropHandler: this.assignPlayer,
+        playerUndoHandler: this.unAssignPlayer,
+        __source: {
+          fileName: _jsxFileName,
+          lineNumber: 294
         },
         __self: this
       }));
@@ -906,7 +1704,7 @@ var Game = function (_React$Component) {
         "div",
         { className: "game-container", __source: {
             fileName: _jsxFileName,
-            lineNumber: 242
+            lineNumber: 304
           },
           __self: this
         },
@@ -921,7 +1719,7 @@ var Game = function (_React$Component) {
 ReactDOM.render(React.createElement(Game, {
   __source: {
     fileName: _jsxFileName,
-    lineNumber: 246
+    lineNumber: 308
   },
   __self: this
 }), document.getElementById("root"));

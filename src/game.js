@@ -6,19 +6,22 @@ class Game extends React.Component {
       board: JSON.parse(JSON.stringify(board_init)) // Deep clone
     };
 
-    this.startGame = this.startGame.bind(this);
+    this.initGame = this.initGame.bind(this);
     this.resetGame = this.resetGame.bind(this);
+    this.startGame = this.startGame.bind(this);
     this.rollDice = this.rollDice.bind(this);
     this.play = this.play.bind(this);
+    this.dragPlayer = this.dragPlayer.bind(this);
+    this.assignPlayer = this.assignPlayer.bind(this);
+    this.unAssignPlayer = this.unAssignPlayer.bind(this);
   }
 
-  startGame() {
+  initGame() {
     let game = Object.assign({}, this.state.game);
     this.setState({
       game: {
         ...game,
-        game_state: 1,
-        active_player: 0
+        game_state: 1
       }
     });
   }
@@ -30,8 +33,50 @@ class Game extends React.Component {
     });
   }
 
+  startGame() {
+    let game = this.state.game;
+    this.setState({
+      game: {
+        ...game,
+        game_state: 2,
+        active_player: 0
+      }
+    });
+  }
+
+  dragPlayer(event, player) {
+    event.dataTransfer.setData("player", player);
+  }
+
+  assignPlayer(event, color) {
+    const game = this.state.game;
+    const players = [...game.players];
+
+    const player = event.dataTransfer.getData("player");
+    players.push({ color, type: player });
+
+    this.setState({
+      game: {
+        ...game,
+        players
+      }
+    });
+  }
+
+  unAssignPlayer(color) {
+    const game = this.state.game;
+    const players = game.players.filter(p => p.color !== color);
+
+    this.setState({
+      game: {
+        ...game,
+        players
+      }
+    });
+  }
+
   nextPlayer(player) {
-    return (player + 1) % players.length;
+    return (player + 1) % this.state.game.players.length;
   }
 
   nextPosition(curr_pos, dice_roll, home_turn, finish) {
@@ -55,11 +100,11 @@ class Game extends React.Component {
   }
 
   rollDice(player_idx) {
-    const board = Object.assign({}, this.state.board);
+    const board = JSON.parse(JSON.stringify(this.state.board));
     let game = Object.assign({}, this.state.game);
 
     let canPlay = false;
-    const player = players[player_idx];
+    const player = game.players[player_idx].color;
 
     // Dice Roll
     const dice_roll = Math.floor(Math.random() * 6 + 1);
@@ -110,7 +155,7 @@ class Game extends React.Component {
     if (canPlay) {
       game = {
         ...game,
-        board_active: 1,
+        board_active: true,
         active_player: player_idx,
         dice_roll,
         prev_player: undefined,
@@ -120,7 +165,7 @@ class Game extends React.Component {
       const next_player_idx = this.nextPlayer(player_idx);
       game = {
         ...game,
-        board_active: 0,
+        board_active: false,
         active_player: next_player_idx,
         dice_roll: -1,
         prev_player: player_idx,
@@ -136,10 +181,10 @@ class Game extends React.Component {
 
   play(player_idx, coin, dice_roll) {
     let game = Object.assign({}, this.state.game);
-    const board = Object.assign({}, this.state.board);
+    const board = JSON.parse(JSON.stringify(this.state.board));
     const coin_position_map = getPositionMap(board);
 
-    const player = players[player_idx];
+    const player = game.players[player_idx].color;
     const player_next_pos = board[player][coin].next_pos;
 
     let playAgain = false;
@@ -192,8 +237,8 @@ class Game extends React.Component {
     if (gaveOver) {
       game = {
         ...game,
-        game_state: 2,
-        board_active: 0,
+        game_state: 3,
+        board_active: false,
         active_player: player_idx,
         dice_roll: -1
       };
@@ -202,7 +247,7 @@ class Game extends React.Component {
     else if (playAgain || dice_roll == 6) {
       game = {
         ...game,
-        board_active: 0,
+        board_active: false,
         active_player: player_idx,
         dice_roll: -1
       };
@@ -212,7 +257,7 @@ class Game extends React.Component {
       const next_player_idx = this.nextPlayer(player_idx);
       game = {
         ...game,
-        board_active: 0,
+        board_active: false,
         active_player: next_player_idx,
         dice_roll: -1
       };
@@ -224,18 +269,35 @@ class Game extends React.Component {
     });
   }
 
+  componentDidUpdate() {
+    // Set up bot play
+    if (isBotsTurn(this.state.game)) {
+      botPlay(this.state.game, this.state.board);
+    }
+  }
+
   render() {
     const game = [];
-
     game.push(
       <Board
         key="board"
         board={this.state.board}
         game={this.state.game}
-        startGame={this.startGame}
+        initGame={this.initGame}
         resetGame={this.resetGame}
         coinClickHandler={this.play}
         diceClickHandler={this.rollDice}
+      />
+    );
+
+    game.push(
+      <AssignmentBox
+        key="assignmentbox"
+        game={this.state.game}
+        startClickHandler={this.startGame}
+        playerDragStartHandler={this.dragPlayer}
+        playerDropHandler={this.assignPlayer}
+        playerUndoHandler={this.unAssignPlayer}
       />
     );
 

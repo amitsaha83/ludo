@@ -2,7 +2,7 @@ function Home(props) {
   if (props.game.game_state === 0) {
     return (
       <div className="board-item home start-btn-container">
-        <div className="play-btn" onClick={() => props.startGame()}></div>
+        <div className="play-btn" onClick={() => props.initGame()}></div>
       </div>
     );
   }
@@ -34,24 +34,24 @@ function Home(props) {
     ></div>
   );
 
-  for (const player of players) {
+  for (const color of colors) {
     const classnames = [];
     classnames.push("home-cell");
-    classnames.push("cell-" + player);
+    classnames.push("cell-" + color);
 
     const coins = [];
     const coinClass = [];
-    if (props.actor_positions[board_metadata[player].finish]) {
+    if (props.actor_positions[board_metadata[color].finish]) {
       classnames.push("occupied");
 
       let coinvPos = 0;
-      for (const coin of props.actor_positions[board_metadata[player].finish]) {
+      for (const coin of props.actor_positions[board_metadata[color].finish]) {
         coinClass.push("coin");
-        coinClass.push("coin-" + player);
+        coinClass.push("coin-" + color);
         coinClass.push("coin-" + coinvPos);
         coins.push(
           <div
-            key={"home-coin-" + player}
+            key={"home-coin-" + color + "-" + coinvPos}
             className={coinClass.join(" ")}
           ></div>
         );
@@ -59,7 +59,7 @@ function Home(props) {
       }
     }
     cells.push(
-      <div key={"home-cell-" + player} className={classnames.join(" ")}>
+      <div key={"home-cell-" + color} className={classnames.join(" ")}>
         {coins}
       </div>
     );
@@ -70,16 +70,25 @@ function Home(props) {
 
 function Jail(props) {
   const cells = [];
+  const playable_colors = [];
+  const assigned_players_map = {};
+
+  // Populate from game metadata
+  for (const player of props.game.players) {
+    playable_colors.push(player.color);
+    assigned_players_map[player.color] = player.type;
+  }
 
   for (let i = 0; i < 25; i++) {
     const classnames = [];
     let clickAction = "";
     const coins = [];
-    const coinClass = [];
+    const action_icon = [];
+    const player_icon = [];
     const cellId = board_metadata[props.color].finish + i + 100;
 
     // Jail cells
-    if (board_metadata[props.color].jail.includes(cellId)) {
+    if (board_metadata[props.color].jail.coin_cells.includes(cellId)) {
       classnames.push("jail-cell");
       classnames.push("cell-" + cellId);
 
@@ -88,7 +97,7 @@ function Jail(props) {
           board_metadata[props.color].finish
         ]) {
           if (board_init[props.color][coin.coin].jail_pos === cellId) {
-            classnames.push("icon-cell fa fa-home");
+            classnames.push("icon-cell far fa-home");
           }
         }
       }
@@ -101,12 +110,14 @@ function Jail(props) {
 
       if (cell_actor && cell_actor.status !== 2) {
         classnames.push("occupied");
+
+        const coinClass = [];
         coinClass.push("coin");
         coinClass.push("coin-" + cell_actor.player);
         coinClass.push("coin-0");
 
         // Check if coin is active for play
-        if (props.game.board_active && cell_actor.status == 1) {
+        if (props.game.board_active && cell_actor.status === 1) {
           coinClass.push("glow");
           coinClass.push("active");
           clickAction = "playCoin";
@@ -115,29 +126,95 @@ function Jail(props) {
         coins.push(
           <div key={"jail-coin-" + i} className={coinClass.join(" ")}></div>
         );
+
+        if (assigned_players_map[cell_actor.player] === "BOT") {
+          player_icon.push(
+            <div
+              key={"jail-bot-player-" + i}
+              className={
+                "active-player-icon player-icon-" +
+                cell_actor.player +
+                " icon-cell far fa-robot"
+              }
+            ></div>
+          );
+        }
       }
     }
     // Center cell to show dice
-    else if (board_metadata[props.color].dice === cellId) {
+    else if (board_metadata[props.color].jail.dice_roll_cell === cellId) {
       classnames.push("cell-" + props.color);
-      if (players[props.game.active_player] == props.color) {
+      classnames.push("occupied");
+
+      const actionClass = [];
+      let content = "";
+      if (playable_colors[props.game.active_player] == props.color) {
         if (props.game.board_active) {
-          classnames.push("dice-face");
-          classnames.push("face-" + props.game.dice_roll);
-        } else if (props.game.game_state === 1) {
-          classnames.push("action-button dice");
-          classnames.push("spinner");
-          clickAction = "rollDice";
+          actionClass.push("dice-face");
+          actionClass.push("icon-cell");
+          actionClass.push("far fa-dice-" + dice_face[props.game.dice_roll]);
         } else if (props.game.game_state === 2) {
-          classnames.push("action-button trophy");
-          classnames.push("zoominout");
+          actionClass.push("action-button dice");
+          actionClass.push("spinner");
+          content = 127922;
+          clickAction = "rollDice";
+        } else if (props.game.game_state === 3) {
+          actionClass.push("action-button trophy");
+          actionClass.push("zoominout");
+          content = 127942;
           clickAction = "gaveOver";
         }
-      } else if (players[props.game.prev_player] == props.color) {
+
+        action_icon.push(
+          <div key={"jail-action-" + i} className={actionClass.join(" ")}>
+            {String.fromCodePoint(content)}
+          </div>
+        );
+
+        if (assigned_players_map[props.color] === "BOT") {
+          player_icon.push(
+            <div
+              key={"jail-bot-player-" + i}
+              className={
+                "active-player-icon player-icon-" +
+                props.color +
+                " icon-cell far fa-robot"
+              }
+            ></div>
+          );
+        }
+      } else if (playable_colors[props.game.prev_player] == props.color) {
         classnames.push("dice-face");
-        classnames.push("face-" + props.game.prev_roll);
+        classnames.push("icon-cell");
+        classnames.push("far fa-dice-" + dice_face[props.game.prev_roll]);
         classnames.push("fade-out");
       }
+    }
+    // Corner cell to show player icon
+    else if (board_metadata[props.color].jail.player_icon_cell === cellId) {
+      classnames.push("cell-" + props.color);
+      classnames.push("icon-cell");
+
+      const assignedclass = [];
+      assignedclass.push("player-icon");
+      assignedclass.push("player-icon-" + props.color);
+      assignedclass.push("far");
+      if (assigned_players_map[props.color] === "HUMAN") {
+        assignedclass.push("fa-user");
+        if (
+          props.game.game_state === 2 &&
+          playable_colors[props.game.active_player] == props.color
+        ) {
+          assignedclass.push("shake");
+        }
+      }
+      if (assigned_players_map[props.color] === "BOT") {
+        assignedclass.push("fa-robot");
+      }
+
+      player_icon.push(
+        <div ey={"jail-player-" + i} className={assignedclass.join(" ")}></div>
+      );
     } else {
       classnames.push("cell-" + props.color);
     }
@@ -158,11 +235,13 @@ function Jail(props) {
 
     cells.push(
       <div
-        key={"jail-cell-" + i}
+        key={"jail-cell-" + props.color + "-" + i}
         className={classnames.join(" ")}
         onClick={clickFunc}
       >
         {coins}
+        {action_icon}
+        {player_icon}
       </div>
     );
   }
@@ -171,6 +250,9 @@ function Jail(props) {
   classnames.push("board-item");
   classnames.push("jail");
   classnames.push("jail-" + props.color);
+  if (!assigned_players_map[props.color]) {
+    classnames.push("disabled");
+  }
   return <div className={classnames.join(" ")}>{cells}</div>;
 }
 
@@ -178,10 +260,19 @@ function Playground(props) {
   const cells = [];
   const rows = props.cells.length;
   const cols = props.cells[0].length;
+  const playable_colors = [];
+  const assigned_players_map = {};
+
+  // Populate from game metadata
+  for (const player of props.game.players) {
+    playable_colors.push(player.color);
+    assigned_players_map[player.color] = player.type;
+  }
 
   for (let i = 0; i < rows; i++) {
     for (let j = 0; j < cols; j++) {
-      let coins = [];
+      const coins = [];
+      const player_icon = [];
       let cellActor = undefined;
       let canClick = false;
       const cellId = props.cells[i][j];
@@ -201,7 +292,7 @@ function Playground(props) {
         classnames.push("cell-" + props.color);
       }
       if (safe_cells.includes(cellId)) {
-        classnames.push("icon-cell fa fa-life-ring");
+        classnames.push("icon-cell far fa-life-ring");
       }
 
       // Check for cell occupancy
@@ -210,7 +301,8 @@ function Playground(props) {
 
         // Determine cell actor
         cellActor = props.actor_positions[cellId].find(
-          cell_actor => cell_actor.player === players[props.game.active_player]
+          cell_actor =>
+            cell_actor.player === playable_colors[props.game.active_player]
         );
         cellActor = cellActor || props.actor_positions[cellId][0];
 
@@ -222,7 +314,7 @@ function Playground(props) {
             // Determine active coin
             if (
               !isCellActor &&
-              coin.player === players[props.game.active_player]
+              coin.player === playable_colors[props.game.active_player]
             ) {
               isCellActor = true;
             } else {
@@ -255,6 +347,19 @@ function Playground(props) {
             className={coinClass.join(" ")}
           ></div>
         );
+
+        if (assigned_players_map[cellActor.player] === "BOT") {
+          player_icon.push(
+            <div
+              key={"playground-player"}
+              className={
+                "active-player-icon player-icon-" +
+                cellActor.player +
+                " icon-cell far fa-robot"
+              }
+            ></div>
+          );
+        }
       }
 
       cells.push(
@@ -273,6 +378,7 @@ function Playground(props) {
           }
         >
           {coins}
+          {player_icon}
         </div>
       );
     }
@@ -297,12 +403,12 @@ function Board(props) {
       key="home"
       game={props.game}
       actor_positions={coin_position_map}
-      startGame={props.startGame}
+      initGame={props.initGame}
     />
   );
 
-  for (let i = 0; i < players.length; i++) {
-    const color = players[i];
+  for (let i = 0; i < colors.length; i++) {
+    const color = colors[i];
     board.push(
       <Jail
         key={"jail-" + i}
@@ -326,37 +432,175 @@ function Board(props) {
     );
   }
 
-  if (props.game.game_state > 0) {
+  if (props.game.game_state > 1) {
     // Show reset button
     board.push(
       <div key={"top-menu"} className="top-menu">
         <span
           title="Game Wiki"
-          className="icon info"
+          className="icon far fa-question"
           onClick={() =>
             window.open(
               "https://en.wikipedia.org/wiki/Ludo_(board_game)",
               "_blank"
             )
           }
-        >
-          &#x24D8;
-        </span>
+        ></span>
         <span
           title="Reset Game"
-          className="icon close"
-          onClick={() => props.resetGame()}
+          className="icon fas fa-times"
           onClick={() => {
             if (window.confirm("Reset the game?")) {
               props.resetGame();
             }
           }}
-        >
-          &#215;
-        </span>
+        ></span>
       </div>
     );
   }
 
   return <div className="board-container">{board}</div>;
+}
+
+function AssignmentBox(props) {
+  if (props.game.game_state === 1) {
+    // Assigned players map
+    const assigned_players_map = {};
+    for (const player of props.game.players) {
+      assigned_players_map[player.color] = player.type;
+    }
+
+    const drag_items = [];
+    drag_items.push(
+      <div
+        key="drag-item-human"
+        className="drag-item icon-cell fad fa-user-tie"
+        draggable="true"
+        onDragStart={event => {
+          event.target.classList.toggle("drag");
+          props.playerDragStartHandler(event, "HUMAN");
+        }}
+        onDragEnd={event => {
+          event.target.classList.toggle("drag");
+        }}
+      ></div>
+    );
+    if (props.game.players.length > 0) {
+      drag_items.push(
+        <div key="drag-item-partition" className="drag-item-partition"></div>
+      );
+
+      drag_items.push(
+        <div
+          key="drag-item-bot"
+          className="drag-item icon-cell fad fa-robot"
+          draggable="true"
+          onDragStart={event => {
+            event.target.classList.add("drag");
+            props.playerDragStartHandler(event, "BOT");
+          }}
+          onDragEnd={event => {
+            event.target.classList.remove("drag");
+          }}
+        ></div>
+      );
+    }
+
+    const drop_items = [];
+    for (const color of colors) {
+      const assignedPlayer = [];
+
+      const dropclass = [];
+      dropclass.push("drop-item");
+      dropclass.push("cell-" + color);
+
+      if (assigned_players_map[color]) {
+        const assignedclass = [];
+        assignedclass.push("assigned-item");
+        assignedclass.push("player-icon-" + color);
+        assignedclass.push("far");
+        if (assigned_players_map[color] === "HUMAN") {
+          assignedclass.push("fa-user");
+        }
+        if (assigned_players_map[color] === "BOT") {
+          assignedclass.push("fa-robot");
+        }
+        assignedPlayer.push(<div className={assignedclass.join(" ")}></div>);
+        assignedPlayer.push(
+          <div
+            key={"drop-item-undo-" + color}
+            className="undo icon-cell far fa-minus-circle"
+            onClick={() => props.playerUndoHandler(color)}
+          ></div>
+        );
+
+        drop_items.push(
+          <div key={"drop-item-" + color} className={dropclass.join(" ")}>
+            {assignedPlayer}
+          </div>
+        );
+      } else {
+        dropclass.push("droppable");
+
+        drop_items.push(
+          <div
+            key={"drop-item-" + color}
+            className={dropclass.join(" ")}
+            onDragOver={event => {
+              event.preventDefault();
+              event.target.classList.add("hover");
+            }}
+            onDragLeave={event => {
+              event.target.classList.remove("hover");
+            }}
+            onDrop={event => {
+              event.target.classList.remove("hover");
+              props.playerDropHandler(event, color);
+            }}
+          ></div>
+        );
+      }
+    }
+
+    const contents = [];
+    // Show draggable section till all players not assigned
+    if (props.game.players.length < 4) {
+      contents.push(
+        <div key="dragzone" className="dragzone">
+          {drag_items}
+        </div>
+      );
+      contents.push(
+        <div key="direction-zone" className="direction-zone">
+          <i className="icon-cell far fa-arrow-alt-down updown"></i>
+        </div>
+      );
+    }
+    contents.push(
+      <div key="dropzone" className="dropzone">
+        {drop_items}
+      </div>
+    );
+
+    // Show next button only after two players are assigned
+    if (props.game.players.length > 1) {
+      contents.push(
+        <div
+          key="next-zone"
+          className="next-zone"
+          onClick={() => props.startClickHandler()}
+        >
+          <i className="icon-cell fas fa-chevron-right"></i>
+        </div>
+      );
+    }
+
+    return (
+      <div className="assignment-box">
+        <div className="contents">{contents}</div>
+      </div>
+    );
+  } else {
+    return "";
+  }
 }
