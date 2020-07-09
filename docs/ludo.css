@@ -1,10 +1,12 @@
 body {
   height: 100vh;
   padding: 0;
+  margin: 0;
 }
 
 #root {
   height: 100%;
+  overflow: auto;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -27,9 +29,11 @@ body {
   width: 96vmin;
   height: 96vmin;
   position: relative;
-  box-sizing: border-box;
-  border: solid 1px #000000;
   background-color: #f8f9fa;
+  border: solid 1px #000000;
+  box-sizing: border-box;
+  box-shadow: 0 17px 50px 0 rgba(0, 0, 0, 0.19),
+    0 12px 15px 0 rgba(0, 0, 0, 0.24);
 }
 
 .jail-green {
@@ -519,4 +523,11 @@ body {
 }
 .assignment-box .contents .next-zone:hover {
   filter: drop-shadow(1vmin 1vmin 1vmin rgba(0, 0, 0, 0.6));
+}
+
+.assignment-box .draggable-cell {
+  font-size: 8vmin;
+  color: #646464;
+  cursor: move;
+  opacity: 0.8;
 }

@@ -756,7 +756,7 @@ function Jail(props) {
             assignedclass.push("fa-robot");
           }
 
-          player_icon.push(React.createElement("div", { ey: "jail-player-" + i, className: assignedclass.join(" "), __source: {
+          player_icon.push(React.createElement("div", { key: "jail-player-" + i, className: assignedclass.join(" "), __source: {
               fileName: _jsxFileName,
               lineNumber: 216
             },
@@ -1110,271 +1110,505 @@ function Board(props) {
     board
   );
 }
+var _jsxFileName = "src/dragable-assignment.js";
 
-function AssignmentBox(props) {
-  var _this3 = this;
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-  if (props.game.game_state === 1) {
-    // Assigned players map
-    var assigned_players_map = {};
-    var _iteratorNormalCompletion7 = true;
-    var _didIteratorError7 = false;
-    var _iteratorError7 = undefined;
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-    try {
-      for (var _iterator7 = props.game.players[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-        var player = _step7.value;
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
-        assigned_players_map[player.color] = player.type;
-      }
-    } catch (err) {
-      _didIteratorError7 = true;
-      _iteratorError7 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion7 && _iterator7.return) {
-          _iterator7.return();
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var DraggableAssignBox = function (_React$Component) {
+  _inherits(DraggableAssignBox, _React$Component);
+
+  function DraggableAssignBox(props) {
+    _classCallCheck(this, DraggableAssignBox);
+
+    var _this = _possibleConstructorReturn(this, (DraggableAssignBox.__proto__ || Object.getPrototypeOf(DraggableAssignBox)).call(this, props));
+
+    _this.setCurrentTarget = function (x, y) {
+      _this.dragElem.style.zIndex = -1;
+      var target = document.elementFromPoint(x, y) || document.body;
+      _this.dragElem.style.zIndex = 1;
+      // prevent it from selecting itself as the target
+      _this.currentTarget = _this.dragElem.contains(target) ? document.body : target;
+    };
+
+    _this.generateEnterLeaveEvents = function (x, y) {
+      _this.setCurrentTarget(x, y);
+      if (_this.currentTarget !== _this.prevTarget) {
+        if (_this.prevTarget) {
+          _this.prevTarget.dispatchEvent(new CustomEvent("onTouchDragLeave"));
         }
+        if (_this.currentTarget) {
+          _this.currentTarget.dispatchEvent(new CustomEvent("onTouchDragEnter"));
+        }
+      }
+      _this.prevTarget = _this.currentTarget;
+    };
+
+    _this.generateDropEvent = function (x, y) {
+      // generate a drop event in whatever we're currently dragging over
+      _this.setCurrentTarget(x, y);
+      _this.currentTarget.dispatchEvent(new CustomEvent("onTouchDrop", {
+        detail: {
+          player: _this.dragElem.dataset.player,
+          color: _this.currentTarget.dataset.color
+        }
+      }));
+    };
+
+    _this.state = {
+      leftOffset: 0,
+      topOffset: 0,
+      left: 0,
+      top: 0,
+      dragging: false
+    };
+    _this.handleDrag = _this.handleDrag.bind(_this);
+    _this.handleTouchStart = _this.handleTouchStart.bind(_this);
+    _this.handleTouchMove = _this.handleTouchMove.bind(_this);
+    _this.handleTouchEnd = _this.handleTouchEnd.bind(_this);
+    _this.handleDragEnter = _this.handleDragEnter.bind(_this);
+    _this.handleDragLeave = _this.handleDragLeave.bind(_this);
+    _this.handleDrop = _this.handleDrop.bind(_this);
+    _this.setCurrentTarget = _this.setCurrentTarget.bind(_this);
+    _this.generateEnterLeaveEvents = _this.generateEnterLeaveEvents.bind(_this);
+    _this.dragElem = null;
+    _this.currentTarget = null;
+    _this.prevTarget = null;
+    _this.dropTarget = [];
+    return _this;
+  }
+
+  _createClass(DraggableAssignBox, [{
+    key: "componentDidMount",
+    value: function componentDidMount() {
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = this.dropTarget[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var elem = _step.value;
+
+          elem.addEventListener("onTouchDragEnter", this.handleDragEnter, false);
+          elem.addEventListener("onTouchDragLeave", this.handleDragLeave, false);
+          elem.addEventListener("onTouchDrop", this.handleDrop, false);
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
       } finally {
-        if (_didIteratorError7) {
-          throw _iteratorError7;
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
         }
       }
     }
+  }, {
+    key: "componentWillUnmount",
+    value: function componentWillUnmount() {
+      var _iteratorNormalCompletion2 = true;
+      var _didIteratorError2 = false;
+      var _iteratorError2 = undefined;
 
-    var drag_items = [];
-    drag_items.push(React.createElement("div", {
-      key: "drag-item-human",
-      className: "drag-item icon-cell fad fa-user-tie",
-      draggable: "true",
-      onDragStart: function onDragStart(event) {
-        event.target.classList.toggle("drag");
-        props.playerDragStartHandler(event, "HUMAN");
-      },
-      onDragEnd: function onDragEnd(event) {
-        event.target.classList.toggle("drag");
-      },
-      __source: {
-        fileName: _jsxFileName,
-        lineNumber: 475
-      },
-      __self: this
-    }));
-    if (props.game.players.length > 0) {
-      drag_items.push(React.createElement("div", { key: "drag-item-partition", className: "drag-item-partition", __source: {
-          fileName: _jsxFileName,
-          lineNumber: 490
-        },
-        __self: this
-      }));
+      try {
+        for (var _iterator2 = this.dropTarget[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          var elem = _step2.value;
 
+          elem.removeEventListener("onTouchDragEnter", this.handleDragEnter, false);
+          elem.removeEventListener("onTouchDragLeave", this.handleDragLeave, false);
+          elem.removeEventListener("onTouchDrop", this.handleDrop, false);
+        }
+      } catch (err) {
+        _didIteratorError2 = true;
+        _iteratorError2 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion2 && _iterator2.return) {
+            _iterator2.return();
+          }
+        } finally {
+          if (_didIteratorError2) {
+            throw _iteratorError2;
+          }
+        }
+      }
+    }
+  }, {
+    key: "handleDrag",
+    value: function handleDrag(event, player) {
+      event.dataTransfer.setData("player", player);
+    }
+  }, {
+    key: "handleTouchStart",
+    value: function handleTouchStart(event) {
+      var rect = event.target.getBoundingClientRect();
+      this.setState({
+        leftOffset: rect.left - event.targetTouches[0].clientX,
+        topOffset: rect.top - event.targetTouches[0].clientY,
+        left: rect.left,
+        top: rect.top,
+        dragging: true
+      });
+      // Prepare the draggable icon
+      this.dragElem.dataset.player = event.target.dataset.player;
+      this.dragElem.classList.add(event.target.dataset.icon);
+    }
+  }, {
+    key: "handleTouchMove",
+    value: function handleTouchMove(event) {
+      var x = event.targetTouches[0].clientX;
+      var y = event.targetTouches[0].clientY;
+
+      var stateChanges = { dragging: true };
+      stateChanges.left = this.state.leftOffset + x;
+      stateChanges.top = this.state.topOffset + y;
+
+      this.setState(stateChanges);
+      this.generateEnterLeaveEvents(x, y);
+    }
+  }, {
+    key: "handleTouchEnd",
+    value: function handleTouchEnd(event) {
+      var x = event.changedTouches[0].clientX;
+      var y = event.changedTouches[0].clientY;
+
+      this.setState({ dragging: false });
+      this.generateDropEvent(x, y);
+
+      // Empty the draggable icon
+      this.dragElem.dataset.player = "";
+      this.dragElem.classList.remove("fa-user-tie");
+      this.dragElem.classList.remove("fa-robot");
+    }
+  }, {
+    key: "handleDragEnter",
+    value: function handleDragEnter(event) {
+      event.target.classList.add("hover");
+      event.preventDefault();
+    }
+  }, {
+    key: "handleDragLeave",
+    value: function handleDragLeave(event) {
+      event.target.classList.remove("hover");
+      event.preventDefault();
+    }
+  }, {
+    key: "handleDrop",
+    value: function handleDrop(event, color) {
+      event.target.classList.remove("hover");
+      var player = void 0;
+      if (event.type && event.type === "onTouchDrop") {
+        player = event.detail["player"];
+        color = event.detail["color"];
+      } else {
+        player = event.dataTransfer.getData("player");
+      }
+      this.props.assignPlayer(player, color);
+    }
+  }, {
+    key: "render",
+    value: function render() {
+      var _this2 = this;
+
+      // Assigned players map
+      var assigned_players_map = {};
+      var hasHumanPlayer = false;
+      var _iteratorNormalCompletion3 = true;
+      var _didIteratorError3 = false;
+      var _iteratorError3 = undefined;
+
+      try {
+        for (var _iterator3 = this.props.game.players[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          var player = _step3.value;
+
+          assigned_players_map[player.color] = player.type;
+          hasHumanPlayer = hasHumanPlayer || player.type === "HUMAN";
+        }
+      } catch (err) {
+        _didIteratorError3 = true;
+        _iteratorError3 = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion3 && _iterator3.return) {
+            _iterator3.return();
+          }
+        } finally {
+          if (_didIteratorError3) {
+            throw _iteratorError3;
+          }
+        }
+      }
+
+      var drag_items = [];
       drag_items.push(React.createElement("div", {
-        key: "drag-item-bot",
-        className: "drag-item icon-cell fad fa-robot",
+        key: "drag-item-human",
+        className: "drag-item icon-cell fad fa-user-tie",
+        "data-player": "HUMAN",
+        "data-icon": "fa-user-tie",
         draggable: "true",
         onDragStart: function onDragStart(event) {
           event.target.classList.add("drag");
-          props.playerDragStartHandler(event, "BOT");
+          _this2.handleDrag(event, "HUMAN");
         },
         onDragEnd: function onDragEnd(event) {
           event.target.classList.remove("drag");
         },
+        onTouchStart: function onTouchStart(event) {
+          event.target.classList.add("drag");
+          _this2.handleTouchStart(event);
+        },
+        onTouchMove: function onTouchMove(event) {
+          event.target.classList.add("drag");
+          _this2.handleTouchMove(event);
+        },
+        onTouchEnd: function onTouchEnd(event) {
+          event.target.classList.remove("drag");
+          _this2.handleTouchEnd(event);
+        },
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 494
+          lineNumber: 154
         },
         __self: this
       }));
-    }
-
-    var drop_items = [];
-
-    var _loop3 = function _loop3(color) {
-      var assignedPlayer = [];
-
-      var dropclass = [];
-      dropclass.push("drop-item");
-      dropclass.push("cell-" + color);
-
-      if (assigned_players_map[color]) {
-        var assignedclass = [];
-        assignedclass.push("assigned-item");
-        assignedclass.push("player-icon-" + color);
-        assignedclass.push("far");
-        if (assigned_players_map[color] === "HUMAN") {
-          assignedclass.push("fa-user");
-        }
-        if (assigned_players_map[color] === "BOT") {
-          assignedclass.push("fa-robot");
-        }
-        assignedPlayer.push(React.createElement("div", { className: assignedclass.join(" "), __source: {
+      if (this.props.game.players.length > 0 && hasHumanPlayer) {
+        drag_items.push(React.createElement("div", { key: "drag-item-partition", className: "drag-item-partition", __source: {
             fileName: _jsxFileName,
-            lineNumber: 528
+            lineNumber: 183
           },
-          __self: _this3
+          __self: this
         }));
-        assignedPlayer.push(React.createElement("div", {
-          key: "drop-item-undo-" + color,
-          className: "undo icon-cell far fa-minus-circle",
-          onClick: function onClick() {
-            return props.playerUndoHandler(color);
+
+        drag_items.push(React.createElement("div", {
+          key: "drag-item-bot",
+          className: "drag-item icon-cell fad fa-robot",
+          "data-player": "BOT",
+          "data-icon": "fa-robot",
+          draggable: "true",
+          onDragStart: function onDragStart(event) {
+            event.target.classList.add("drag");
+            _this2.handleDrag(event, "BOT");
+          },
+          onDragEnd: function onDragEnd(event) {
+            event.target.classList.remove("drag");
+          },
+          onTouchStart: function onTouchStart(event) {
+            event.target.classList.add("drag");
+            _this2.handleTouchStart(event);
+          },
+          onTouchMove: function onTouchMove(event) {
+            event.target.classList.add("drag");
+            _this2.handleTouchMove(event);
+          },
+          onTouchEnd: function onTouchEnd(event) {
+            event.target.classList.remove("drag");
+            _this2.handleTouchEnd(event);
           },
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 530
+            lineNumber: 187
           },
-          __self: _this3
+          __self: this
         }));
+      }
+
+      var drop_items = [];
+
+      var _loop = function _loop(i) {
+        var color = colors[i];
+        var assignedPlayer = [];
+        var droppable = false;
+
+        var dropclass = [];
+        dropclass.push("drop-item");
+        dropclass.push("cell-" + color);
+
+        if (assigned_players_map[color]) {
+          var assignedclass = [];
+          assignedclass.push("assigned-item");
+          assignedclass.push("player-icon-" + color);
+          assignedclass.push("far");
+          if (assigned_players_map[color] === "HUMAN") {
+            assignedclass.push("fa-user");
+          }
+          if (assigned_players_map[color] === "BOT") {
+            assignedclass.push("fa-robot");
+          }
+          assignedPlayer.push(React.createElement("div", {
+            key: "drop-item-assigned-" + color,
+            className: assignedclass.join(" "),
+            __source: {
+              fileName: _jsxFileName,
+              lineNumber: 238
+            },
+            __self: _this2
+          }));
+          assignedPlayer.push(React.createElement("div", {
+            key: "drop-item-undo-" + color,
+            className: "undo icon-cell far fa-minus-circle",
+            onClick: function onClick() {
+              return _this2.props.unAssignPlayer(color);
+            },
+            __source: {
+              fileName: _jsxFileName,
+              lineNumber: 244
+            },
+            __self: _this2
+          }));
+        } else {
+          dropclass.push("droppable");
+          droppable = true;
+        }
 
         drop_items.push(React.createElement(
           "div",
-          { key: "drop-item-" + color, className: dropclass.join(" "), __source: {
-              fileName: _jsxFileName,
-              lineNumber: 538
+          {
+            key: "drop-target-" + color,
+            "data-color": color,
+            ref: function ref(elem) {
+              return _this2.dropTarget[i] = elem;
             },
-            __self: _this3
+            className: dropclass.join(" "),
+            onDragOver: droppable ? function (e) {
+              return _this2.handleDragEnter(e);
+            } : undefined,
+            onDragLeave: droppable ? function (e) {
+              return _this2.handleDragLeave(e);
+            } : undefined,
+            onDrop: function onDrop(e) {
+              return _this2.handleDrop(e, color);
+            },
+            __source: {
+              fileName: _jsxFileName,
+              lineNumber: 256
+            },
+            __self: _this2
           },
           assignedPlayer
         ));
-      } else {
-        dropclass.push("droppable");
+      };
 
-        drop_items.push(React.createElement("div", {
-          key: "drop-item-" + color,
-          className: dropclass.join(" "),
-          onDragOver: function onDragOver(event) {
-            event.preventDefault();
-            event.target.classList.add("hover");
+      for (var i = 0; i < colors.length; i++) {
+        _loop(i);
+      }
+
+      var contents = [];
+      // Show draggable section till all players not assigned
+      if (this.props.game.players.length < 4) {
+        contents.push(React.createElement(
+          "div",
+          { key: "dragzone", className: "dragzone", __source: {
+              fileName: _jsxFileName,
+              lineNumber: 274
+            },
+            __self: this
           },
-          onDragLeave: function onDragLeave(event) {
-            event.target.classList.remove("hover");
+          drag_items
+        ));
+        contents.push(React.createElement(
+          "div",
+          { key: "direction-zone", className: "direction-zone", __source: {
+              fileName: _jsxFileName,
+              lineNumber: 279
+            },
+            __self: this
           },
-          onDrop: function onDrop(event) {
-            event.target.classList.remove("hover");
-            props.playerDropHandler(event, color);
+          React.createElement("i", { className: "icon-cell far fa-arrow-alt-down updown", __source: {
+              fileName: _jsxFileName,
+              lineNumber: 280
+            },
+            __self: this
+          })
+        ));
+      }
+      contents.push(React.createElement(
+        "div",
+        { key: "dropzone", className: "dropzone", __source: {
+            fileName: _jsxFileName,
+            lineNumber: 285
           },
+          __self: this
+        },
+        drop_items
+      ));
+
+      // Show next button only after two players are assigned
+      if (this.props.game.players.length > 1 && hasHumanPlayer) {
+        contents.push(React.createElement(
+          "div",
+          {
+            key: "next-zone",
+            className: "next-zone",
+            onClick: function onClick() {
+              return _this2.props.startClickHandler();
+            },
+            __source: {
+              fileName: _jsxFileName,
+              lineNumber: 293
+            },
+            __self: this
+          },
+          React.createElement("i", { className: "icon-cell fas fa-chevron-right", __source: {
+              fileName: _jsxFileName,
+              lineNumber: 298
+            },
+            __self: this
+          })
+        ));
+      }
+
+      return React.createElement(
+        "div",
+        { className: "assignment-box", __source: {
+            fileName: _jsxFileName,
+            lineNumber: 304
+          },
+          __self: this
+        },
+        React.createElement(
+          "div",
+          { className: "contents", __source: {
+              fileName: _jsxFileName,
+              lineNumber: 305
+            },
+            __self: this
+          },
+          contents
+        ),
+        React.createElement("div", {
+          className: "draggable-cell fad",
+          style: {
+            position: "fixed",
+            left: this.state.left,
+            top: this.state.top,
+            display: this.state.dragging ? "block" : "none"
+          },
+          ref: function ref(elem) {
+            return _this2.dragElem = elem;
+          },
+          "data-player": "HUMAN",
           __source: {
             fileName: _jsxFileName,
-            lineNumber: 546
-          },
-          __self: _this3
-        }));
-      }
-    };
-
-    var _iteratorNormalCompletion8 = true;
-    var _didIteratorError8 = false;
-    var _iteratorError8 = undefined;
-
-    try {
-      for (var _iterator8 = colors[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-        var color = _step8.value;
-
-        _loop3(color);
-      }
-    } catch (err) {
-      _didIteratorError8 = true;
-      _iteratorError8 = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion8 && _iterator8.return) {
-          _iterator8.return();
-        }
-      } finally {
-        if (_didIteratorError8) {
-          throw _iteratorError8;
-        }
-      }
-    }
-
-    var contents = [];
-    // Show draggable section till all players not assigned
-    if (props.game.players.length < 4) {
-      contents.push(React.createElement(
-        "div",
-        { key: "dragzone", className: "dragzone", __source: {
-            fileName: _jsxFileName,
-            lineNumber: 569
-          },
-          __self: this
-        },
-        drag_items
-      ));
-      contents.push(React.createElement(
-        "div",
-        { key: "direction-zone", className: "direction-zone", __source: {
-            fileName: _jsxFileName,
-            lineNumber: 574
-          },
-          __self: this
-        },
-        React.createElement("i", { className: "icon-cell far fa-arrow-alt-down updown", __source: {
-            fileName: _jsxFileName,
-            lineNumber: 575
+            lineNumber: 306
           },
           __self: this
         })
-      ));
+      );
     }
-    contents.push(React.createElement(
-      "div",
-      { key: "dropzone", className: "dropzone", __source: {
-          fileName: _jsxFileName,
-          lineNumber: 580
-        },
-        __self: this
-      },
-      drop_items
-    ));
+  }]);
 
-    // Show next button only after two players are assigned
-    if (props.game.players.length > 1) {
-      contents.push(React.createElement(
-        "div",
-        {
-          key: "next-zone",
-          className: "next-zone",
-          onClick: function onClick() {
-            return props.startClickHandler();
-          },
-          __source: {
-            fileName: _jsxFileName,
-            lineNumber: 588
-          },
-          __self: this
-        },
-        React.createElement("i", { className: "icon-cell fas fa-chevron-right", __source: {
-            fileName: _jsxFileName,
-            lineNumber: 593
-          },
-          __self: this
-        })
-      ));
-    }
-
-    return React.createElement(
-      "div",
-      { className: "assignment-box", __source: {
-          fileName: _jsxFileName,
-          lineNumber: 599
-        },
-        __self: this
-      },
-      React.createElement(
-        "div",
-        { className: "contents", __source: {
-            fileName: _jsxFileName,
-            lineNumber: 600
-          },
-          __self: this
-        },
-        contents
-      )
-    );
-  } else {
-    return "";
-  }
-}
+  return DraggableAssignBox;
+}(React.Component);
 var _jsxFileName = "src/game.js";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1405,7 +1639,6 @@ var Game = function (_React$Component) {
     _this.startGame = _this.startGame.bind(_this);
     _this.rollDice = _this.rollDice.bind(_this);
     _this.play = _this.play.bind(_this);
-    _this.dragPlayer = _this.dragPlayer.bind(_this);
     _this.assignPlayer = _this.assignPlayer.bind(_this);
     _this.unAssignPlayer = _this.unAssignPlayer.bind(_this);
     return _this;
@@ -1441,17 +1674,10 @@ var Game = function (_React$Component) {
       });
     }
   }, {
-    key: "dragPlayer",
-    value: function dragPlayer(event, player) {
-      event.dataTransfer.setData("player", player);
-    }
-  }, {
     key: "assignPlayer",
-    value: function assignPlayer(event, color) {
+    value: function assignPlayer(player, color) {
       var game = this.state.game;
       var players = [].concat(_toConsumableArray(game.players));
-
-      var player = event.dataTransfer.getData("player");
       players.push({ color: color, type: player });
 
       this.setState({
@@ -1681,30 +1907,31 @@ var Game = function (_React$Component) {
         diceClickHandler: this.rollDice,
         __source: {
           fileName: _jsxFileName,
-          lineNumber: 282
+          lineNumber: 275
         },
         __self: this
       }));
 
-      game.push(React.createElement(AssignmentBox, {
-        key: "assignmentbox",
-        game: this.state.game,
-        startClickHandler: this.startGame,
-        playerDragStartHandler: this.dragPlayer,
-        playerDropHandler: this.assignPlayer,
-        playerUndoHandler: this.unAssignPlayer,
-        __source: {
-          fileName: _jsxFileName,
-          lineNumber: 294
-        },
-        __self: this
-      }));
+      if (this.state.game.game_state === 1) {
+        game.push(React.createElement(DraggableAssignBox, {
+          key: "assignmentbox",
+          game: this.state.game,
+          startClickHandler: this.startGame,
+          assignPlayer: this.assignPlayer,
+          unAssignPlayer: this.unAssignPlayer,
+          __source: {
+            fileName: _jsxFileName,
+            lineNumber: 288
+          },
+          __self: this
+        }));
+      }
 
       return React.createElement(
         "div",
         { className: "game-container", __source: {
             fileName: _jsxFileName,
-            lineNumber: 304
+            lineNumber: 298
           },
           __self: this
         },
@@ -1719,7 +1946,7 @@ var Game = function (_React$Component) {
 ReactDOM.render(React.createElement(Game, {
   __source: {
     fileName: _jsxFileName,
-    lineNumber: 308
+    lineNumber: 302
   },
   __self: this
 }), document.getElementById("root"));

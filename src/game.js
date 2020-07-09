@@ -11,7 +11,6 @@ class Game extends React.Component {
     this.startGame = this.startGame.bind(this);
     this.rollDice = this.rollDice.bind(this);
     this.play = this.play.bind(this);
-    this.dragPlayer = this.dragPlayer.bind(this);
     this.assignPlayer = this.assignPlayer.bind(this);
     this.unAssignPlayer = this.unAssignPlayer.bind(this);
   }
@@ -44,15 +43,9 @@ class Game extends React.Component {
     });
   }
 
-  dragPlayer(event, player) {
-    event.dataTransfer.setData("player", player);
-  }
-
-  assignPlayer(event, color) {
+  assignPlayer(player, color) {
     const game = this.state.game;
     const players = [...game.players];
-
-    const player = event.dataTransfer.getData("player");
     players.push({ color, type: player });
 
     this.setState({
@@ -290,16 +283,17 @@ class Game extends React.Component {
       />
     );
 
-    game.push(
-      <AssignmentBox
-        key="assignmentbox"
-        game={this.state.game}
-        startClickHandler={this.startGame}
-        playerDragStartHandler={this.dragPlayer}
-        playerDropHandler={this.assignPlayer}
-        playerUndoHandler={this.unAssignPlayer}
-      />
-    );
+    if (this.state.game.game_state === 1) {
+      game.push(
+        <DraggableAssignBox
+          key="assignmentbox"
+          game={this.state.game}
+          startClickHandler={this.startGame}
+          assignPlayer={this.assignPlayer}
+          unAssignPlayer={this.unAssignPlayer}
+        />
+      );
+    }
 
     return <div className="game-container">{game}</div>;
   }
